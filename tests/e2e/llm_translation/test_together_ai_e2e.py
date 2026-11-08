@@ -913,3 +913,17 @@ class TestTogetherMessages:
                 f"and message_stop {stop_at:.2f}s after it; a relayed stream shows the first delta "
                 f"at least {STREAM_MIN_LEAD_SECONDS}s before the end, so the response was buffered"
             )
+
+
+@pytest.mark.parametrize(
+    "backend",
+    ["together_ai/zai-org/GLM-5.3-Flash", "together_ai/nvidia/NVIDIA-Nemotron-3.5-Super-VL"],
+)
+def test_diag_raw_cache_usage(client: PassthroughClient, resources: ResourceManager, backend: str) -> None:
+    import json
+
+    model, key = _register(client, resources, backend)
+    bodies = tuple(json.loads(result.body) for result in _primed_calls_until_cache_hit(client, key, model))
+    for index, body in enumerate(bodies):
+        print(f"DIAG {backend} attempt={index} model={body.get('model')} usage={json.dumps(body.get('usage'))}")
+    assert False, f"DIAG {backend} done after {len(bodies)} attempts"
